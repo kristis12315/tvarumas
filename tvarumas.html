@@ -40,33 +40,99 @@
 <body>
     <h1>School Transportation Program</h1>
 
-    <form method="POST" action="/signup">
+    <form id="signupForm" onsubmit="submitForm(event)">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required>
-        <input type="submit" value="Sign Up">
+        <label for="ride">Ride:</label>
+        <select id="ride" name="ride">
+            <option value="bike">Bike</option>
+            <option value="scooter">Scooter</option>
+            <option value="walk">Walk</option>
+        </select>
+        <label for="distance">Distance (km):</label>
+        <input type="number" id="distance" name="distance" step="0.1" required>
+        <input type="submit" value="Submit">
     </form>
 
     <h2>Leaderboard</h2>
 
-    <table>
+    <table id="leaderboard">
         <tr>
             <th>Rank</th>
-            <th>Participant</th>
+            <th>Name</th>
             <th>Points</th>
-            <th>Bike (km)</th>
-            <th>Scooter (km)</th>
-            <th>Walk (km)</th>
+            <th>Total Distance (km)</th>
         </tr>
-        {% for participant in leaderboard %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ participant.name }}</td>
-            <td>{{ participant.points }}</td>
-            <td>{{ participant.kilometers.bike }}</td>
-            <td>{{ participant.kilometers.scooter }}</td>
-            <td>{{ participant.kilometers.walk }}</td>
-        </tr>
-        {% endfor %}
     </table>
+
+    <script>
+        // Track participants' data
+        var participants = [];
+
+        function submitForm(event) {
+            event.preventDefault();
+
+            var form = document.getElementById("signupForm");
+            var name = form.elements["name"].value;
+            var ride = form.elements["ride"].value;
+            var distance = parseFloat(form.elements["distance"].value);
+
+            var points = calculatePoints(ride, distance);
+            var totalDistance = calculateTotalDistance(name, distance);
+
+            updateLeaderboard(name, points, totalDistance);
+
+            form.reset();
+        }
+
+        function calculatePoints(ride, distance) {
+            if (ride === "bike") {
+                return Math.round(distance * 15);
+            } else if (ride === "scooter") {
+                return Math.round(distance * 10);
+            } else if (ride === "walk") {
+                return Math.round(distance * 30);
+            }
+        }
+
+        function calculateTotalDistance(name, distance) {
+            var participant = participants.find(function(participant) {
+                return participant.name === name;
+            });
+
+            if (participant) {
+                participant.distance += distance;
+            } else {
+                participants.push({
+                    name: name,
+                    distance: distance
+                });
+            }
+
+            return participants.find(function(participant) {
+                return participant.name === name;
+            }).distance;
+        }
+
+        function updateLeaderboard(name, points, totalDistance) {
+            participants.sort(function(a, b) {
+                return b.distance - a.distance;
+            });
+
+            var leaderboardTable = document.getElementById("leaderboard");
+
+            while (leaderboardTable.rows.length > 1) {
+                leaderboardTable.deleteRow(1);
+            }
+
+            for (var i = 0; i < participants.length; i++) {
+                var row = leaderboardTable.insertRow(i + 1);
+                row.insertCell(0).textContent = i + 1;
+                row.insertCell(1).textContent = participants[i].name;
+                row.insertCell(2).textContent = calculatePoints("bike", participants[i].distance);
+                row.insertCell(3).textContent = participants[i].distance.toFixed(1);
+            }
+        }
+    </script>
 </body>
 </html>
